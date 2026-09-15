@@ -1,26 +1,77 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-warm: #FAF7F2;
+    --bg-card: #FFFFFF;
+    --bg-card-alt: #F5EFEB;
+    --text-primary: #1C2024;
+    --text-secondary: #4A5568;
+    --text-muted: #718096;
+    --accent-red: #8B1E1E;
+    --accent-red-hover: #721616;
+    --accent-gold: #B88A44;
+    --accent-gold-light: #F4E8D1;
+    --border-subtle: #E2D9CC;
+    --border-strong: #C8BCAC;
+  }
+
+  body {
+    background-color: var(--bg-warm);
+    color: var(--text-primary);
+    font-family: var(--font-sans-viet), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  h1, h2, h3, .font-scholarly {
+    font-family: var(--font-serif-scholarly), Georgia, Cambria, "Times New Roman", Times, serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Accessible focus styling */
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid #8B1E1E;
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Highlight pulse for interactive node jumping */
+@keyframes highlight-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 30, 30, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(184, 138, 68, 0.4);
+    transform: scale(1.02);
+  }
+}
+
+.node-highlighted {
+  animation: highlight-pulse 1.8s ease-in-out infinite;
+  border-color: #8B1E1E !important;
+}
+
+/* Custom scrollbar for exhibition style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F5EFEB;
+}
+::-webkit-scrollbar-thumb {
+  background: #C8BCAC;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B88A44;
 }
