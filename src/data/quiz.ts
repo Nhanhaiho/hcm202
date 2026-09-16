@@ -1,3 +1,5 @@
+import { quizQuestions } from "./quizQuestions";
+
 export interface QuizOption {
   id: string;
   text: string;
@@ -106,3 +108,5 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     coreInsight: "Các yếu tố có vai trò phân tầng chức năng rõ rệt; chống lối tư duy cào bằng hoặc cơ học."
   }
 ];
+
+export { quizQuestions };

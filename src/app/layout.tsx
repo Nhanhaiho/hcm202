@@ -36,9 +36,13 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
+      suppressHydrationWarning
       className={`${notoSerif.variable} ${beVietnamPro.variable} scroll-smooth antialiased`}
     >
-      <body className="min-h-screen bg-[#FAF7F2] text-[#1C2024] font-sans selection:bg-[#8B1E1E]/20 selection:text-[#8B1E1E]">
+      <body
+        suppressHydrationWarning
+        className="min-h-screen bg-[#FAF7F2] text-[#1C2024] font-sans selection:bg-[#8B1E1E]/20 selection:text-[#8B1E1E]"
+      >
         {children}
       </body>
     </html>

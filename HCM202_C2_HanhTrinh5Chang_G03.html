@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hành trình 5 chặng — HCM202</title>
+<style>
+  :root{--navy:#0b1f3a;--orange:#f77c1f;--teal:#11ab94;--blue:#2c6ca0;--ink:#1c2430;--grey:#5c6e82;
+        --line:#d6e0ea;--tint:#f4f8fb;--warm:#fff6ea;--ok:#1f8a5f;--bad:#c2413c;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--navy);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  #app{max-width:640px;margin:0 auto;min-height:100dvh;background:#fff;display:flex;flex-direction:column}
+  header{background:var(--navy);color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;
+    flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header b{font-size:15px}
+  .pill{background:rgba(255,255,255,.14);border-radius:99px;padding:3px 10px;font-size:12px}
+  main{flex:1;padding:14px;display:flex;flex-direction:column;gap:12px}
+  h1{font-size:21px;margin:0 0 4px;color:var(--navy);line-height:1.25}
+  h2{font-size:17px;margin:0 0 6px;color:var(--navy)}
+  p,li{font-size:15px;line-height:1.55;margin:0 0 10px}
+  .muted{color:var(--grey);font-size:13.5px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+  .tint{background:var(--tint)} .warm{background:var(--warm);border-color:#f4d6ae}
+  button{font:inherit;font-weight:600;border:0;border-radius:11px;padding:14px 16px;min-height:48px;
+    cursor:pointer;width:100%;background:var(--blue);color:#fff}
+  button.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+  button.go{background:var(--orange)}
+  button:disabled{opacity:.55;cursor:default}
+  .opts{display:flex;flex-direction:column;gap:9px;margin-top:10px}
+  .opt{text-align:left;background:#fff;color:var(--ink);border:1.5px solid var(--line);font-weight:500;
+    line-height:1.45;padding:13px 14px}
+  .opt:hover{border-color:var(--blue)}
+  .opt.ok{border-color:var(--ok);background:#eaf7f0}
+  .opt.bad{border-color:var(--bad);background:#fdeeed}
+  .row{display:flex;gap:9px} .row>*{flex:1}
+  canvas{width:100%;height:auto;display:block;border-radius:12px;border:1px solid var(--line);touch-action:none}
+  .hud{display:flex;justify-content:space-between;font-size:13px;color:var(--grey);margin-top:7px}
+  .bar{height:7px;background:var(--line);border-radius:99px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--teal)}
+  .chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;
+    background:var(--tint);color:var(--blue);border:1px solid var(--line)}
+  .src{font-size:12.5px;color:var(--grey);margin-top:8px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+  .big{font-size:30px;font-weight:800;color:var(--navy)}
+  .mk{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;letter-spacing:.5px;
+    background:var(--tint);border:1px dashed var(--line);border-radius:9px;padding:10px;word-break:break-all}
+  footer{padding:12px 14px;color:#9fb0c2;font-size:11.5px;background:var(--navy)}
+  .hide{display:none !important}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <b id="hMon">—</b><span class="pill" id="hChang">—</span><span class="pill" id="hDiem">0 đ</span>
+  </header>
+  <main id="main"></main>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+// ===== KHỐI DỮ LIỆU BÀI HỌC =====
+// Chỉ sửa phần này khi làm game cho chương/nội dung khác.
+
+const MON      = 'HCM202 — Tư tưởng Hồ Chí Minh';
+const NOIDUNG  = 'Chương 2, mục II: Quá trình hình thành và phát triển tư tưởng Hồ Chí Minh (tr. 45–59)';
+const NGUON    = 'Bộ Giáo dục và Đào tạo. Giáo trình Tư tưởng Hồ Chí Minh (dành cho bậc đại học hệ không chuyên lý luận chính trị). Hà Nội: Nxb. Chính trị quốc gia Sự thật.';
+const DUYET    = '';
+
+const HAN_DUNG = '';
+const MA_MO    = '';
+
+const DIEM_BAC = [0.5, 1, 2];
+const TEN_BAC  = ['Dễ', 'Trung bình', 'Khó'];
+const DIEM_MOI_O_TONGKET = 1;
+const DIEM_BAY_MOI_CHANG = 0.5;
+
+const QUY_DOI = [
+  { nguong: 85, diem: 0.75 },
+  { nguong: 65, diem: 0.50 },
+  { nguong: 0,  diem: 0.25 }
+];
+
+const CHANG = [
+  {
+    ten: 'Trước 1911',
+    tieude: 'Hình thành tư tưởng yêu nước',
+    trang: 'tr. 45–47',
+    ho: 180, tocdo: 1.8, chuongngai: 0, troi: '#dbeafe', gio: false,
+    cau: [
+      { q: 'Hồ Chí Minh sinh vào ngày tháng năm nào?',
+        o: ['Ngày 19/5/1890', 'Ngày 19/5/1889', 'Ngày 19/8/1890', 'Ngày 5/6/1890'],
+        a: 0, bac: 0, s: 'tr.46',
+        e: 'Giáo trình ghi Người sinh ngày 19/5/1890 (tr.46).' },
+      { q: 'Cụ Nguyễn Sinh Sắc, thân sinh của Hồ Chí Minh, đỗ học vị nào?',
+        o: ['Phó bảng', 'Tiến sĩ', 'Cử nhân', 'Hoàng giáp'],
+        a: 0, bac: 0, s: 'tr.46',
+        e: 'Cụ Nguyễn Sinh Sắc đỗ phó bảng, từng được bổ nhiệm Tri huyện huyện Bình Khê, tỉnh Bình Định (tr.46).' },
+      { q: 'Năm 1910, Hồ Chí Minh dạy học tại địa phương nào?',
+        o: ['Phan Thiết', 'Quy Nhơn', 'Huế', 'Sài Gòn'],
+        a: 0, bac: 0, s: 'tr.47',
+        e: 'Giáo trình nêu Người dạy học ở Phan Thiết năm 1910 (tr.47).' }
+    ]
+  },
+  {
+    ten: '1911 – 1920',
+    tieude: 'Hình thành tư tưởng cứu nước, giải phóng dân tộc',
+    trang: 'tr. 47–49',
+    ho: 165, tocdo: 2.1, chuongngai: 0, troi: '#e0f2fe', gio: false,
+    cau: [
+      { q: 'Năm 1919, Hồ Chí Minh gia nhập tổ chức chính trị nào ở Pháp?',
+        o: ['Đảng Xã hội Pháp', 'Đảng Cộng sản Pháp', 'Đảng Cấp tiến Pháp', 'Đảng Cộng hòa Pháp'],
+        a: 0, bac: 0, s: 'tr.48',
+        e: 'Năm 1919 Người gia nhập Đảng Xã hội của giai cấp công nhân Pháp. Đảng Cộng sản Pháp được Người tham gia sáng lập cuối năm 1920 (tr.48–49).' },
+      { q: 'Bản Yêu sách của nhân dân An Nam được gửi tới hội nghị quốc tế nào?',
+        o: ['Hội nghị Vécxây', 'Hội nghị Giơnevơ', 'Hội nghị Pốtxđam', 'Hội nghị Ianta'],
+        a: 0, bac: 0, s: 'tr.48',
+        e: 'Người lấy tên Nguyễn Ái Quốc, thay mặt những người Việt Nam yêu nước ở Pháp gửi Yêu sách tới Hội nghị Vécxây (tr.48).' },
+      { q: 'Vì sao sự kiện ngày 30/12/1920 được coi là bước ngoặt trong cuộc đời Hồ Chí Minh?',
+        o: ['Vì chủ nghĩa yêu nước ở Người kết hợp chặt chẽ với lập trường cách mạng vô sản',
+            'Vì đây là lần đầu tiên Người rời Tổ quốc ra nước ngoài tìm đường cứu nước',
+            'Vì Người được bầu vào Ban Chấp hành Quốc tế Cộng sản tại Mátxcơva',
+            'Vì Người trở lại nước Pháp sau một thời gian dài hoạt động tại nước Anh'],
+        a: 0, bac: 1, s: 'tr.49',
+        e: 'Tại Đại hội Tua, Người bỏ phiếu tán thành Quốc tế Cộng sản, tham gia sáng lập Đảng Cộng sản Pháp, trở thành người cộng sản Việt Nam đầu tiên (tr.49).' }
+    ]
+  },
+  {
+    ten: '1920 – 1930',
+    tieude: 'Hình thành những nội dung cơ bản tư tưởng về cách mạng Việt Nam',
+    trang: 'tr. 49–52',
+    ho: 145, tocdo: 1.8, chuongngai: 1, troi: '#fef3c7', gio: false,
+    cau: [
+      { q: 'Tác phẩm Bản án chế độ thực dân Pháp được Hồ Chí Minh viết bằng ngôn ngữ nào?',
+        o: ['Tiếng Pháp', 'Tiếng Việt', 'Tiếng Nga', 'Tiếng Trung Quốc'],
+        a: 0, bac: 0, s: 'tr.50',
+        e: 'Giáo trình ghi tác phẩm được viết bằng tiếng Pháp (tr.50).' },
+      { q: 'Hai văn kiện nào được thông qua tại Hội nghị thành lập Đảng đầu năm 1930 và được coi là Cương lĩnh chính trị đầu tiên?',
+        o: ['Chánh cương vắn tắt và Sách lược vắn tắt', 'Luận cương chính trị và Chánh cương vắn tắt',
+            'Đường kách mệnh và Sách lược vắn tắt', 'Chương trình tóm tắt và Luận cương chính trị'],
+        a: 0, bac: 0, s: 'tr.51',
+        e: 'Chánh cương vắn tắt của Đảng và Sách lược vắn tắt của Đảng do Người khởi thảo (tr.51).' },
+      { q: 'Vì sao thời kỳ 1920 – 1930 được gọi là thời kỳ hình thành những nội dung cơ bản tư tưởng về cách mạng Việt Nam?',
+        o: ['Vì mục tiêu và phương hướng cách mạng giải phóng dân tộc từng bước được cụ thể hóa trong Cương lĩnh chính trị đầu tiên',
+            'Vì đây là thời kỳ Người lần đầu tiên tiếp xúc với phong trào công nhân và các tổ chức yêu nước tại Pháp',
+            'Vì đây là thời kỳ Người trực tiếp lãnh đạo phong trào cách mạng trong nước sau khi trở về Tổ quốc',
+            'Vì đây là thời kỳ Người hoàn thiện lý luận về Nhà nước kiểu mới và về xây dựng chủ nghĩa xã hội'],
+        a: 0, bac: 1, s: 'tr.49',
+        e: 'Giáo trình xác định đây là thời kỳ mục tiêu, phương hướng cách mạng từng bước được cụ thể hóa, thể hiện rõ trong Cương lĩnh chính trị đầu tiên (tr.49).' }
+    ]
+  },
+  {
+    ten: '1930 – 1941',
+    tieude: 'Vượt qua thử thách, giữ vững đường lối, phương pháp cách mạng',
+    trang: 'tr. 52–55',
+    ho: 128, tocdo: 1.8, chuongngai: 2, troi: '#fce7f3', gio: false,
+    cau: [
+      { q: 'Hội nghị Ban Chấp hành Trung ương Đảng tháng 5/1941 do Hồ Chí Minh chủ trì họp tại đâu?',
+        o: ['Pác Bó, Cao Bằng', 'Tân Trào, Tuyên Quang', 'Hương Cảng, Trung Quốc', 'Ma Cao, Trung Quốc'],
+        a: 0, bac: 0, s: 'tr.54',
+        e: 'Tháng 5/1941, tại Pác Bó, huyện Hà Quảng, tỉnh Cao Bằng (tr.54).' },
+      { q: 'Trong thời kỳ 1930 – 1941, những thử thách lớn đối với Hồ Chí Minh đến từ đâu?',
+        o: ['Từ cả phía kẻ thù lẫn từ trong nội bộ những người cách mạng',
+            'Chỉ từ phía thực dân Pháp và bộ máy cai trị ở các nước thuộc địa',
+            'Chỉ từ mâu thuẫn giữa các tổ chức yêu nước đang hoạt động trong nước',
+            'Chỉ từ điều kiện hoạt động khó khăn khi Người sống và làm việc ở nước ngoài'],
+        a: 0, bac: 1, s: 'tr.52',
+        e: 'Giáo trình nêu rõ thử thách xuất hiện không chỉ từ phía kẻ thù, mà còn từ trong nội bộ những người cách mạng (tr.52).' },
+      { q: 'Vì sao có thể nói sự chuyển hướng chiến lược tại Hội nghị Trung ương tháng 11/1939 và tháng 5/1941 thực chất là sự trở về với Cương lĩnh chính trị đầu tiên?',
+        o: ['Vì hai hội nghị đặt nhiệm vụ giải phóng dân tộc lên hàng đầu, đúng quan điểm Người nêu từ đầu năm 1930',
+            'Vì hai hội nghị quyết định giải thể Đảng Cộng sản Đông Dương để thành lập Mặt trận Việt Minh',
+            'Vì hai hội nghị thông qua lại toàn văn Luận cương chính trị được công bố vào tháng 10/1930',
+            'Vì hai hội nghị đều diễn ra tại Hương Cảng, nơi Cương lĩnh chính trị đầu tiên được khởi thảo'],
+        a: 0, bac: 2, s: 'tr.54–55',
+        e: 'Hội nghị tháng 5/1941 đặt nhiệm vụ giải phóng dân tộc lên hàng đầu. Giáo trình nhận định sự chuyển hướng thực chất là trở về quan điểm Người đã nêu trong Cương lĩnh chính trị đầu tiên (tr.54–55).' }
+    ]
+  },
+  {
+    ten: '1941 – 1969',
+    tieude: 'Tư tưởng Hồ Chí Minh tiếp tục phát triển, hoàn thiện',
+    trang: 'tr. 55–59',
+    ho: 110, tocdo: 1.8, chuongngai: 3, troi: '#e0e7ff', gio: true,
+    cau: [
+      { q: 'Đường lối kháng chiến chống thực dân Pháp do Đảng đề ra gồm những nội dung nào?',
+        o: ['Lâu dài, toàn dân, toàn diện, tự lực cánh sinh',
+            'Đánh nhanh, thắng nhanh, tập trung lực lượng chủ lực',
+            'Phòng ngự lâu dài, chờ thời cơ quốc tế thuận lợi',
+            'Chỉ dựa vào viện trợ và sự ủng hộ từ bên ngoài'],
+        a: 0, bac: 1, s: 'tr.57',
+        e: 'Giáo trình nêu đường lối kháng chiến lâu dài, toàn dân, toàn diện, tự lực cánh sinh (tr.57).' },
+      { q: 'Vì sao Lời kêu gọi ngày 17/7/1966 được xem là sự khẳng định một giá trị đã xuyên suốt tư tưởng Hồ Chí Minh?',
+        o: ['Vì nó nâng độc lập, tự do thành chân lý lớn của thời đại, tiếp nối quan điểm đã nêu từ Tuyên ngôn Độc lập năm 1945',
+            'Vì đây là lần đầu tiên Người đề cập tới vấn đề độc lập dân tộc trong các bài viết của mình',
+            'Vì nội dung của nó được Người trình bày lần đầu tại Hội nghị Trung ương Đảng tháng 5/1941',
+            'Vì đây là văn kiện cuối cùng Người để lại trước khi đi xa, thay cho bản Di chúc lịch sử'],
+        a: 0, bac: 2, s: 'tr.58',
+        e: 'Ngày 17/7/1966, Người nêu chân lý lớn của thời đại: Không có gì quý hơn độc lập, tự do (tr.58). Di chúc mới là văn kiện Người để lại trước khi đi xa.' },
+      { q: 'Vì sao thắng lợi của Cách mạng Tháng Tám năm 1945 được coi là thắng lợi to lớn đầu tiên của chủ nghĩa Mác – Lênin và tư tưởng Hồ Chí Minh ở Việt Nam?',
+        o: ['Vì đường lối do Người vạch ra lần đầu được kiểm nghiệm bằng việc giành chính quyền, lật đổ chế độ thuộc địa nửa phong kiến',
+            'Vì đây là sự kiện đánh dấu việc Đảng Cộng sản Việt Nam chính thức được thành lập và ra hoạt động công khai',
+            'Vì đây là kết quả trực tiếp của bản Yêu sách của nhân dân An Nam gửi tới Hội nghị Vécxây năm 1919',
+            'Vì đây là lần đầu bản Tuyên ngôn độc lập được khởi thảo tại căn cứ địa Pác Bó, tỉnh Cao Bằng'],
+        a: 0, bac: 2, s: 'tr.56',
+        e: 'Cách mạng Tháng Tám lật đổ chế độ thuộc địa, nửa phong kiến hơn 80 năm. Giáo trình gọi đây là thắng lợi to lớn đầu tiên của chủ nghĩa Mác – Lênin và tư tưởng Hồ Chí Minh ở Việt Nam (tr.56).' }
+    ]
+  }
+];
+
+const TONG_KET = [
+  { su_kien: 'Dạy học tại Phan Thiết',                  k: 0, s: 'tr.47' },
+  { su_kien: 'Gửi Yêu sách của nhân dân An Nam',        k: 1, s: 'tr.48' },
+  { su_kien: 'Thông qua Cương lĩnh chính trị đầu tiên', k: 2, s: 'tr.51' },
+  { su_kien: 'Hội nghị Trung ương Đảng tháng 5/1941',   k: 3, s: 'tr.54' },
+  { su_kien: 'Đọc Tuyên ngôn độc lập tại Ba Đình',      k: 4, s: 'tr.56' }
+];
+
+// ===== HẾT KHỐI DỮ LIỆU =====
+// Từ đây trở xuống là phần máy móc. Không sửa khi đổi nội dung bài học.
+
+// Phơi dữ liệu bài học ra window để kịch bản kiểm thử tự động đọc được (chỉ đọc, không dùng khi chơi).
+window.DULIEU = { MON, NOIDUNG, NGUON, DUYET, CHANG, TONG_KET, QUY_DOI, DIEM_BAC, DIEM_MOI_O_TONGKET };
+
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const main = $('#main');
+  const MANG_MOI_CHANG = 3;
+
+  const S = {
+    biet_danh: '', ma_lop: '',
+    chang: 0, cau: 0, mang: MANG_MOI_CHANG,
+    diem_kien_thuc: 0, diem_tongket: 0, diem_ky_nang: 0,
+    sach_chang: true,            // chưa mất mạng nào ở chặng này
+    da_tra_loi: {},              // khóa 'chang-cau' -> true, để không cộng điểm hai lần
+    da_sai: {},                  // câu đã trả lời sai ít nhất một lần: không cộng điểm khi làm lại
+    ghep: {}, dang_chon: null
+  };
+
+  const tongDiemToiDa = (() => {
+    let d = 0;
+    CHANG.forEach(c => c.cau.forEach(q => { d += DIEM_BAC[q.bac]; }));
+    return d + TONG_KET.length * DIEM_MOI_O_TONGKET;
+  })();
+
+  const tongDiem = () => S.diem_kien_thuc + S.diem_tongket;
+  const so = n => (Math.round(n * 100) / 100).toString().replace('.', ',');
+
+  function capNhatHeader() {
+    $('#hMon').textContent = MON;
+    $('#hChang').textContent = S.chang < CHANG.length
+      ? `Chặng ${S.chang + 1}/${CHANG.length}` : 'Tổng kết';
+    $('#hDiem').textContent = so(tongDiem()) + ' đ';
+    $('#foot').textContent = NGUON + (DUYET ? ' · Duyệt: ' + DUYET : ' · BẢN NHÁP, chưa duyệt');
+  }
+
+  // ---------- màn hình ----------
+  function manChao() {
+    main.innerHTML = `
+      <div class="card">
+        <h1>Hành trình ${CHANG.length} chặng</h1>
+        <p class="muted">${NOIDUNG}</p>
+        <p>Mỗi chặng có ${CHANG[0].cau.length} câu hỏi. Trả lời đúng thì cổng mở ra và bạn bay qua;
+           trả lời sai thì mất một mạng. Hết mạng thì chơi lại chặng đó từ câu đầu, các chặng đã qua
+           vẫn được giữ.</p>
+        <label class="muted" for="bd">Biệt danh (tự đặt, không dùng tên thật)</label>
+        <input id="bd" maxlength="20" placeholder="ví dụ: Chim sẻ 01"
+          style="width:100%;padding:13px;margin:6px 0 12px;border:1.5px solid var(--line);
+                 border-radius:11px;font:inherit">
+        <label class="muted" for="ml">Mã lớp</label>
+        <input id="ml" maxlength="12" placeholder="ví dụ: SP26-A1"
+          style="width:100%;padding:13px;margin:6px 0 14px;border:1.5px solid var(--line);
+                 border-radius:11px;font:inherit">
+        <button class="go" id="btVao">Bắt đầu hành trình</button>
+      </div>
+      <div class="card warm">
+        <b>Lưu ý</b>
+        <p class="muted" style="margin:6px 0 0">Trò chơi chạy hoàn toàn trên máy bạn, không gửi dữ liệu
+        đi đâu. Đừng nhập thông tin cá nhân: tên thật, mã số hay địa chỉ thư điện tử.</p>
+      </div>`;
+    $('#btVao').onclick = () => {
+      S.biet_danh = ($('#bd').value || 'Ẩn danh').trim().slice(0, 20);
+      S.ma_lop = ($('#ml').value || '—').trim().slice(0, 12);
+      manSanSang();
+    };
+    capNhatHeader();
+  }
+
+  function manSanSang() {
+    const c = CHANG[S.chang];
+    main.innerHTML = `
+      <div class="card tint">
+        <span class="chip">Chặng ${S.chang + 1}</span>
+        <h1 style="margin-top:8px">${c.ten}</h1>
+        <p>${c.tieude}</p>
+        <p class="muted">Nội dung trong giáo trình: ${c.trang} · ${c.cau.length} câu ·
+           ${MANG_MOI_CHANG} mạng</p>
+        <button class="go" id="btSan">Sẵn sàng?</button>
+      </div>`;
+    $('#btSan').onclick = () => { S.cau = 0; S.mang = MANG_MOI_CHANG; S.sach_chang = true; manCauHoi(); };
+    capNhatHeader();
+  }
+
+  function manCauHoi() {
+    const c = CHANG[S.chang], q = c.cau[S.cau];
+    main.innerHTML = `
+      <div class="card">
+        <div class="bar"><i style="width:${(S.cau / c.cau.length) * 100}%"></i></div>
+        <div class="hud"><span>Câu ${S.cau + 1}/${c.cau.length} · ${TEN_BAC[q.bac]}
+          (${so(DIEM_BAC[q.bac])} đ)</span><span>Mạng: ${'●'.repeat(S.mang)}${'○'.repeat(MANG_MOI_CHANG - S.mang)}</span></div>
+        <h2 style="margin-top:12px">${q.q}</h2>
+        <div class="opts" id="opts"></div>
+        <div id="giai"></div>
+      </div>`;
+    const box = $('#opts');
+    q.o.forEach((t, i) => {
+      const b = document.createElement('button');
+      b.className = 'opt'; b.textContent = t; b.dataset.i = i;
+      b.onclick = () => chonDapAn(i);
+      box.appendChild(b);
+    });
+    capNhatHeader();
+  }
+
+  function chonDapAn(i) {
+    const c = CHANG[S.chang], q = c.cau[S.cau];
+    const nut = [...document.querySelectorAll('.opt')];
+    nut.forEach(b => { b.disabled = true; });
+    nut[q.a].classList.add('ok');
+    const dung = i === q.a;
+    if (!dung) nut[i].classList.add('bad');
+    const khoa = S.chang + '-' + S.cau;
+    // Chỉ tính điểm khi trả lời đúng ngay lần đầu. Nếu đã sai một lần, làm lại vẫn qua được chặng
+    // nhưng không còn điểm — nhờ vậy tổng điểm mới phản ánh mức nắm kiến thức.
+    if (!dung) S.da_sai[khoa] = true;
+    if (dung && !S.da_tra_loi[khoa] && !S.da_sai[khoa]) {
+      S.diem_kien_thuc += DIEM_BAC[q.bac]; S.da_tra_loi[khoa] = true;
+    }
+    $('#giai').innerHTML = `
+      <div class="card ${dung ? 'tint' : 'warm'}" style="margin-top:12px">
+        <b style="color:${dung ? 'var(--ok)' : 'var(--bad)'}">${dung ? 'Chính xác' : 'Chưa đúng'}</b>
+        <p style="margin:6px 0 0">${q.e}</p>
+        ${(!dung) ? '<p class="muted" style="margin:6px 0 0">Câu này sẽ không còn tính điểm khi bạn làm lại, nhưng bạn vẫn qua được chặng.</p>' : ''}
+        <div class="src">Nguồn: giáo trình ${q.s}</div>
+      </div>
+      <button class="go" id="btTiep" style="margin-top:12px">${dung ? 'Bay qua cổng' : 'Bay tiếp (cổng hẹp lại)'}</button>`;
+    $('#btTiep').onclick = () => manBay(dung);
+    capNhatHeader();
+  }
+
+  // ---------- phần bay ----------
+  // Khớp kiểm thử: khi window.__KIEM_THU = true, bỏ qua đoạn bay để kịch bản tự động chạy hết luồng.
+  // Mặc định tắt; chỉ bật trong Playwright hoặc jsdom, không bật khi phát cho sinh viên.
+  function manBay(traLoiDung) {
+    if (window.__KIEM_THU) { setTimeout(() => ketQuaBay(traLoiDung), 0); return; }
+    const c = CHANG[S.chang];
+    main.innerHTML = `
+      <div class="card">
+        <div class="hud" style="margin:0 0 8px">
+          <span>Chặng ${S.chang + 1} · ${c.ten}</span>
+          <span>Mạng: ${'●'.repeat(S.mang)}${'○'.repeat(MANG_MOI_CHANG - S.mang)}</span></div>
+        <canvas id="cv" width="600" height="360"></canvas>
+        <p class="muted" style="margin:10px 0 0">Chạm vào khung hoặc bấm phím cách để bay lên.
+           Giữ nhân vật đi qua khe hở.</p>
+      </div>`;
+    bay($('#cv'), c, traLoiDung, ketQuaBay);
+  }
+
+  function bay(cv, c, rong, xong) {
+    const ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    const kheHo = rong ? c.ho : Math.max(74, c.ho - 45);      // trả lời sai: cổng hẹp lại
+    const tocdo = c.tocdo * 1.25;
+    const soCot = 1 + (c.chuongngai || 0);
+    const gio = c.gio ? 0.28 : 0;
+    let y = H / 2, vy = 0, x = 70, t = 0, ket = null;
+    const cot = [];
+    for (let i = 0; i < soCot; i++) {
+      const cx = W + i * (W / soCot) * 0.92 + 120;
+      cot.push({ x: cx, y: 70 + Math.random() * (H - 140 - kheHo) });
+    }
+    const bay = () => { vy = -4.6; };
+    const chamTay = e => { e.preventDefault(); bay(); };
+    cv.addEventListener('pointerdown', chamTay);
+    const phim = e => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); bay(); } };
+    window.addEventListener('keydown', phim);
+
+    function ve() {
+      ctx.fillStyle = c.troi || '#dbeafe'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      for (let i = 0; i < 4; i++) {
+        const mx = (W - ((t * 0.35 + i * 190) % (W + 180)));
+        ctx.beginPath(); ctx.ellipse(mx, 46 + i * 27, 42, 15, 0, 0, 7); ctx.fill();
+      }
+      ctx.fillStyle = '#2c6ca0';
+      cot.forEach(p => {
+        ctx.fillRect(p.x, 0, 40, p.y);
+        ctx.fillRect(p.x, p.y + kheHo, 40, H - p.y - kheHo);
+        ctx.fillStyle = '#11ab94';
+        ctx.fillRect(p.x - 3, p.y - 9, 46, 9);
+        ctx.fillRect(p.x - 3, p.y + kheHo, 46, 9);
+        ctx.fillStyle = '#2c6ca0';
+      });
+      ctx.fillStyle = '#f77c1f';
+      ctx.beginPath(); ctx.ellipse(x, y, 14, 11, Math.min(.5, vy / 16), 0, 7); ctx.fill();
+      ctx.fillStyle = '#0b1f3a';
+      ctx.beginPath(); ctx.arc(x + 6, y - 3, 2.4, 0, 7); ctx.fill();
+      ctx.fillStyle = '#0b1f3a'; ctx.fillRect(0, H - 16, W, 16);
+    }
+
+    function buoc() {
+      if (ket) return;
+      t++;
+      vy += 0.32; y += vy;
+      if (gio) x += Math.sin(t / 40) * gio;
+      x = Math.max(40, Math.min(x, 140));
+      cot.forEach(p => {
+        p.x -= tocdo;
+        if (p.x < -50) { p.x = W + 40 + Math.random() * 90; p.y = 70 + Math.random() * (H - 140 - kheHo); }
+      });
+      if (y > H - 24 || y < 12) ket = 'roi';
+      cot.forEach(p => {
+        if (x + 13 > p.x && x - 13 < p.x + 40 && (y - 11 < p.y || y + 11 > p.y + kheHo)) ket = 'va';
+      });
+      if (t > 240 && !ket) ket = 'qua';
+      ve();
+      if (ket) {
+        cv.removeEventListener('pointerdown', chamTay);
+        window.removeEventListener('keydown', phim);
+        setTimeout(() => xong(ket === 'qua'), 350);
+      } else requestAnimationFrame(buoc);
+    }
+    ve();
+    requestAnimationFrame(buoc);
+  }
+
+  function ketQuaBay(quaDuoc) {
+    const c = CHANG[S.chang];
+    if (!quaDuoc) {
+      S.mang--; S.sach_chang = false;
+      if (S.mang <= 0) {
+        main.innerHTML = `
+          <div class="card warm">
+            <h2>Hết mạng ở chặng ${S.chang + 1}</h2>
+            <p>Bạn chơi lại chặng này từ câu đầu. Điểm kiến thức của các câu đã trả lời đúng vẫn được giữ,
+               và các chặng đã vượt không bị mất.</p>
+            <button class="go" id="btLai">Chơi lại chặng ${S.chang + 1}</button>
+          </div>`;
+        $('#btLai').onclick = () => { S.cau = 0; S.mang = MANG_MOI_CHANG; manCauHoi(); };
+        return;
+      }
+      main.innerHTML = `
+        <div class="card warm">
+          <h2>Va chạm</h2>
+          <p>Còn ${S.mang} mạng. Thử lại câu này.</p>
+          <button class="go" id="btThu">Thử lại</button>
+        </div>`;
+      $('#btThu').onclick = manCauHoi;
+      return;
+    }
+    S.cau++;
+    if (S.cau < c.cau.length) { manCauHoi(); return; }
+    if (S.sach_chang) S.diem_ky_nang += DIEM_BAY_MOI_CHANG;
+    S.chang++;
+    if (S.chang < CHANG.length) {
+      main.innerHTML = `
+        <div class="card tint">
+          <h2>Vượt chặng ${S.chang}</h2>
+          <p>${S.sach_chang ? 'Vượt trọn chặng, không mất mạng nào: thưởng ' + so(DIEM_BAY_MOI_CHANG)
+                              + ' đ kỹ năng (không tính vào thang điểm).' : 'Đã qua chặng.'}</p>
+          <button class="go" id="btNext">Sang chặng ${S.chang + 1}</button>
+        </div>`;
+      $('#btNext').onclick = manSanSang;
+      capNhatHeader();
+    } else manTongKet();
+  }
+
+  // ---------- tổng kết: ghép sự kiện với thời kỳ ----------
+  function manTongKet() {
+    capNhatHeader();
+    const conLai = TONG_KET.filter((_, i) => S.ghep[i] === undefined);
+    if (!conLai.length) return manKetQua();
+    main.innerHTML = `
+      <div class="card">
+        <h2>Hoạt động tổng kết</h2>
+        <p class="muted">Chọn một sự kiện, rồi chọn thời kỳ tương ứng. Mỗi phần đúng được
+           ${so(DIEM_MOI_O_TONGKET)} đ.</p>
+        <div id="sk" class="opts"></div>
+        <div id="tk" class="opts" style="margin-top:14px"></div>
+      </div>`;
+    const sk = $('#sk'), tk = $('#tk');
+    TONG_KET.forEach((m, i) => {
+      const b = document.createElement('button');
+      b.className = 'opt'; b.textContent = m.su_kien;
+      if (S.ghep[i] !== undefined) { b.disabled = true; b.classList.add(S.ghep[i] ? 'ok' : 'bad'); }
+      b.onclick = () => { S.dang_chon = i; ve(); };
+      if (S.dang_chon === i) b.style.borderColor = 'var(--orange)';
+      sk.appendChild(b);
+    });
+    const nhan = document.createElement('p');
+    nhan.className = 'muted'; nhan.textContent = S.dang_chon === null
+      ? 'Chọn một sự kiện ở trên.' : 'Sự kiện này thuộc thời kỳ nào?';
+    tk.appendChild(nhan);
+    CHANG.forEach((c, k) => {
+      const b = document.createElement('button');
+      b.className = 'opt'; b.textContent = c.ten + ' — ' + c.tieude;
+      b.disabled = S.dang_chon === null;
+      b.onclick = () => {
+        const dung = TONG_KET[S.dang_chon].k === k;
+        if (dung) S.diem_tongket += DIEM_MOI_O_TONGKET;
+        S.ghep[S.dang_chon] = dung; S.dang_chon = null;
+        manTongKet();
+      };
+      tk.appendChild(b);
+    });
+    function ve() { manTongKet(); }
+  }
+
+  // ---------- kết quả ----------
+  function maKetQua(pct, diem) {
+    const tho = `${S.biet_danh}|${S.ma_lop}|${so(tongDiem())}|${pct}`;
+    let h = 7;
+    for (const ch of tho) h = (h * 31 + ch.charCodeAt(0)) % 99991;
+    return `HCM202-C2B-${S.ma_lop}-${so(tongDiem())}d-${pct}%-${String(h).padStart(5, '0')}`;
+  }
+
+  function manKetQua() {
+    const pct = Math.round((tongDiem() / tongDiemToiDa) * 100);
+    const muc = QUY_DOI.find(r => pct >= r.nguong) || QUY_DOI[QUY_DOI.length - 1];
+    const ma = maKetQua(pct, muc.diem);
+    capNhatHeader();
+    main.innerHTML = `
+      <div class="card tint">
+        <h1>Hoàn thành hành trình</h1>
+        <p class="muted">${S.biet_danh} · lớp ${S.ma_lop}</p>
+        <div class="big">${so(tongDiem())} / ${so(tongDiemToiDa)} điểm — ${pct}%</div>
+        <table>
+          <tr><td>Kiến thức (${Object.keys(S.da_tra_loi).length}/${CHANG.reduce((n,c)=>n+c.cau.length,0)} câu đúng ngay lần đầu)</td><td>${so(S.diem_kien_thuc)} đ</td></tr>
+          <tr><td>Hoạt động tổng kết</td><td>${so(S.diem_tongket)} đ</td></tr>
+          <tr><td>Điểm kỹ năng thao tác (không tính vào thang)</td><td>${so(S.diem_ky_nang)} đ</td></tr>
+        </table>
+        <p style="margin-top:14px"><b>Mức điểm cộng: +${so(muc.diem)}</b></p>
+        <p class="muted">Mức sàn +${so(QUY_DOI[QUY_DOI.length - 1].diem)} dành cho người hoàn thành trọn
+           hành trình. Việc đưa điểm cộng vào cột nào do giảng viên quyết định.</p>
+      </div>
+      <div class="card">
+        <b>Mã kết quả — gửi cho giảng viên</b>
+        <div class="mk">${ma}</div>
+        <div class="row" style="margin-top:12px">
+          <button class="ghost" id="btChep">Chép mã</button>
+          <button class="ghost" id="btLai">Chơi lại từ đầu</button>
+        </div>
+      </div>
+      <div class="card warm">
+        <b>Xem lại nguồn</b>
+        <p class="muted" style="margin:6px 0 0">${NGUON}</p>
+      </div>`;
+    $('#btChep').onclick = () => {
+      navigator.clipboard && navigator.clipboard.writeText(ma);
+      $('#btChep').textContent = 'Đã chép';
+    };
+    $('#btLai').onclick = () => {
+      Object.assign(S, { chang: 0, cau: 0, mang: MANG_MOI_CHANG, diem_kien_thuc: 0, diem_tongket: 0,
+        diem_ky_nang: 0, sach_chang: true, da_tra_loi: {}, da_sai: {}, ghep: {}, dang_chon: null });
+      manChao();
+    };
+  }
+
+  // khởi động
+  function coCan() {
+    if (HAN_DUNG) {
+      const han = new Date(HAN_DUNG + 'T23:59:59');
+      if (!isNaN(han) && new Date() > han) {
+        main.innerHTML = `<div class="card warm"><h2>Hết hạn</h2>
+          <p>Trò chơi này đã quá hạn sử dụng (${HAN_DUNG}). Liên hệ giảng viên.</p></div>`;
+        return false;
+      }
+    }
+    return true;
+  }
+  capNhatHeader();
+  if (coCan()) manChao();
+})();
+</script>
+</body>
+</html>
