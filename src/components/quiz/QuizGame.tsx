@@ -14,6 +14,8 @@ interface QuizGameProps {
 
 type GameStage = "welcome" | "question" | "stage-summary" | "final-result";
 
+const QUESTION_TIME_LIMIT = 60; // 1 phút (60 giây) cho mỗi câu hỏi
+
 export const QuizGame: React.FC<QuizGameProps> = ({ onOpenSource, onNavigateToBonus }) => {
   // Game Setup State
   const [activeQuestions, setActiveQuestions] = useState<QuizQuestionType[]>(quizQuestions);
@@ -51,8 +53,8 @@ export const QuizGame: React.FC<QuizGameProps> = ({ onOpenSource, onNavigateToBo
     return () => cancelAnimationFrame(frameId);
   }, []);
 
-  // 30-second Timer
-  const [timeLeft, setTimeLeft] = useState<number>(30);
+  // 60-second Timer (1 phút)
+  const [timeLeft, setTimeLeft] = useState<number>(QUESTION_TIME_LIMIT);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Save high score to localStorage safely
@@ -111,7 +113,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({ onOpenSource, onNavigateToBo
     setSelectedOptionIndex(null);
     setIsAnswered(false);
     setIsTimedOut(false);
-    setTimeLeft(30);
+    setTimeLeft(QUESTION_TIME_LIMIT);
   };
 
   // Start 20-question challenge
@@ -136,8 +138,8 @@ export const QuizGame: React.FC<QuizGameProps> = ({ onOpenSource, onNavigateToBo
 
     const isCorrect = optionIndex === currentQuestion.correctIndex;
     if (isCorrect) {
-      // 100 points + speed bonus (max 50 based on 30 seconds)
-      const timeBonus = Math.round((timeLeft / 30) * 50);
+      // 100 points + speed bonus (max 50 based on 60 seconds)
+      const timeBonus = Math.round((timeLeft / QUESTION_TIME_LIMIT) * 50);
       const earned = 100 + timeBonus;
       const newScore = soloScore + earned;
       setSoloScore(newScore);
@@ -253,7 +255,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({ onOpenSource, onNavigateToBo
                   <span className="w-5 h-5 rounded-full bg-[#8B1E1E]/10 text-[#8B1E1E] text-xs font-bold flex items-center justify-center flex-shrink-0">
                     ✓
                   </span>
-                  <span>30 giây suy nghĩ cho mỗi câu.</span>
+                  <span>1 phút (60 giây) suy nghĩ cho mỗi câu.</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <span className="w-5 h-5 rounded-full bg-[#8B1E1E]/10 text-[#8B1E1E] text-xs font-bold flex items-center justify-center flex-shrink-0">
@@ -305,12 +307,13 @@ export const QuizGame: React.FC<QuizGameProps> = ({ onOpenSource, onNavigateToBo
       {/* 2. PLAYING QUESTION */}
       {gameStage === "question" && (
         <div className="max-w-4xl mx-auto">
-          {/* Progress bar, Stage info & 30s timer */}
+          {/* Progress bar, Stage info & 60s timer */}
           <QuizProgress
             currentStage={currentStage}
             questionIndex={currentQuestionIndex}
             totalQuestions={activeQuestions.length}
             timeLeft={timeLeft}
+            maxTime={QUESTION_TIME_LIMIT}
             isAnswered={isAnswered}
             streak={soloStreak}
             highScore={highScore}

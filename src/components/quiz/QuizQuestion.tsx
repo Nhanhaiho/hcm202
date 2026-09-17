@@ -83,7 +83,7 @@ export const QuizQuestion: React.FC<QuizQuestionProps> = ({
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {isAnswered &&
           (isTimedOut
-            ? "Đã hết 30 giây. Xem đáp án đúng và luận giải bên dưới."
+            ? "Đã hết 1 phút. Xem đáp án đúng và luận giải bên dưới."
             : isCorrect
             ? "Chính xác! Bạn đã chọn đáp án đúng."
             : "Chưa chính xác! Xem giải thích bên dưới.")}
@@ -180,7 +180,7 @@ export const QuizQuestion: React.FC<QuizQuestionProps> = ({
               }`}
             >
               {isTimedOut ? (
-                <>⏱ Hết giờ 30s (Chưa chọn)</>
+                <>⏱ Hết giờ 1 phút (Chưa chọn)</>
               ) : isCorrect ? (
                 <>
                   <span className="text-emerald-600">✓</span> Chính xác!

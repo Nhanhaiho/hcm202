@@ -6,7 +6,8 @@ interface QuizProgressProps {
   currentStage: 1 | 2 | 3 | 4;
   questionIndex: number; // 0-based
   totalQuestions: number; // 20
-  timeLeft: number; // 0 to 30
+  timeLeft: number; // 0 to maxTime
+  maxTime?: number; // default 60s
   isAnswered: boolean;
   streak?: number;
   highScore?: number;
@@ -17,6 +18,7 @@ export const QuizProgress: React.FC<QuizProgressProps> = ({
   questionIndex,
   totalQuestions,
   timeLeft,
+  maxTime = 60,
   isAnswered,
   streak = 0,
   highScore = 0
@@ -24,18 +26,18 @@ export const QuizProgress: React.FC<QuizProgressProps> = ({
   const currentNum = questionIndex + 1;
   const progressPercent = Math.min(100, Math.round((currentNum / totalQuestions) * 100));
 
-  // Timer color transition: green -> amber -> red
+  // Timer color transition: green -> amber -> red (cho 60s: >30s xanh, >15s vàng, <=15s đỏ nhấp nháy)
   const timerColor =
-    timeLeft > 15
+    timeLeft > maxTime / 2
       ? "text-emerald-700 stroke-emerald-600"
-      : timeLeft > 7
+      : timeLeft > maxTime / 4
       ? "text-amber-600 stroke-amber-500"
       : "text-red-600 stroke-red-500 animate-pulse";
 
   // SVG circular countdown calculations (radius = 18, circumference = 2 * PI * 18 = 113.1)
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (timeLeft / 30) * circumference;
+  const strokeDashoffset = circumference - (timeLeft / maxTime) * circumference;
 
   return (
     <div className="bg-white rounded-2xl border border-[#E2D9CC] p-4 sm:p-5 shadow-sm mb-6">
@@ -99,7 +101,7 @@ export const QuizProgress: React.FC<QuizProgressProps> = ({
             </span>
           </div>
           <span className="text-xs text-[#718096] font-medium hidden sm:inline">
-            {isAnswered ? "Đã khóa" : "Thời gian (30s)"}
+            {isAnswered ? "Đã khóa" : "Thời gian (1 phút)"}
           </span>
         </div>
       </div>
